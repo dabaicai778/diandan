@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>智能点单系统 - 备注增强版</title>
+    <title>智能点单系统 - 自适应增强版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
@@ -12,6 +12,7 @@
             font-family: 'Noto Sans SC', sans-serif; 
             background-color: #f8fafc; 
             -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
 
         .scroll-hide::-webkit-scrollbar { display: none; }
@@ -28,10 +29,24 @@
             ring: 2px solid #2563eb;
         }
 
+        @media (max-width: 640px) {
+            .status-btn {
+                width: 32px;
+                height: 32px;
+                padding: 0 !important;
+                border-radius: 999px !important;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+            }
+            .status-btn span { display: none; }
+            .status-btn::before { content: attr(data-short); }
+        }
+
         .fade-in { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 独立看板页面容器 */
         #page-display {
             position: fixed;
             inset: 0;
@@ -65,113 +80,89 @@
 </head>
 <body class="antialiased text-slate-900">
 
-    <!-- 独立叫号看板页面 -->
     <div id="page-display">
-        <div class="h-20 bg-white border-b flex items-center justify-between px-10 shadow-sm">
-            <h1 class="text-2xl font-black text-slate-800">自助取餐看板</h1>
-            <div class="flex items-center gap-4">
-                <div id="display-time" class="text-xl font-bold text-slate-500">00:00:00</div>
-                <button onclick="closeDisplayPage()" class="p-2 bg-slate-100 rounded-full font-bold">关闭</button>
-            </div>
+        <div class="h-16 bg-white border-b flex items-center justify-between px-6 shadow-sm">
+            <h1 class="text-lg font-black text-slate-800">自助取餐看板</h1>
+            <button onclick="closeDisplayPage()" class="px-4 py-1.5 bg-slate-100 rounded-full text-sm font-bold">关闭</button>
         </div>
-        <div class="flex-grow p-8 grid grid-cols-12 gap-8 bg-slate-50 overflow-hidden">
-            <div class="col-span-4 flex flex-col gap-4">
-                <div class="bg-blue-600 rounded-2xl p-4 text-white font-bold">制作中 Preparing</div>
-                <div id="screen-preparing" class="flex-grow bg-white rounded-3xl p-4 shadow-inner grid grid-cols-2 gap-3 content-start"></div>
+        <div class="flex-grow p-4 grid grid-cols-12 gap-4 bg-slate-50 overflow-hidden">
+            <div class="col-span-4 flex flex-col gap-2">
+                <div class="bg-blue-600 rounded-xl p-2 text-white font-bold text-xs text-center">制作中</div>
+                <div id="screen-preparing" class="flex-grow bg-white rounded-2xl p-2 shadow-inner grid grid-cols-2 gap-2 content-start overflow-y-auto scroll-hide"></div>
             </div>
-            <div class="col-span-8 flex flex-col gap-4">
-                <div class="bg-green-500 rounded-2xl p-4 text-white font-bold text-center text-xl">请取餐 Please Pickup</div>
-                <div id="screen-ready" class="flex-grow bg-white rounded-3xl p-6 shadow-inner grid grid-cols-3 gap-6 content-start"></div>
+            <div class="col-span-8 flex flex-col gap-2">
+                <div class="bg-green-500 rounded-xl p-2 text-white font-bold text-center text-xs">请取餐</div>
+                <div id="screen-ready" class="flex-grow bg-white rounded-2xl p-3 shadow-inner grid grid-cols-3 gap-3 content-start overflow-y-auto scroll-hide"></div>
             </div>
         </div>
     </div>
 
     <div id="app" class="min-h-screen flex flex-col">
-        <!-- 导航 -->
         <header class="bg-white p-4 sticky top-0 z-50 border-b border-slate-100 shadow-sm">
-            <div class="max-w-7xl mx-auto flex flex-col gap-4">
+            <div class="max-w-7xl mx-auto flex flex-col gap-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black italic">T</div>
-                        <h1 class="text-xl font-black text-slate-800">智慧点单系统</h1>
+                        <div class="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black italic">T</div>
+                        <h1 class="text-lg font-black text-slate-800 tracking-tight">智慧点单系统</h1>
                     </div>
-                    <button onclick="openDisplayPage()" class="text-xs bg-slate-900 text-white px-4 py-2 rounded-full font-bold">打开看板</button>
+                    <button onclick="openDisplayPage()" class="text-[10px] bg-slate-900 text-white px-3 py-1.5 rounded-full font-bold">打开看板</button>
                 </div>
-                <div class="flex gap-2 overflow-x-auto scroll-hide">
-                    <button onclick="switchTab('order')" id="btn-order" class="tab-btn px-5 py-2 rounded-xl text-sm font-bold bg-white text-slate-600 border border-slate-200 tab-active">点单收银</button>
-                    <button onclick="switchTab('status')" id="btn-status" class="tab-btn px-5 py-2 rounded-xl text-sm font-bold bg-white text-slate-600 border border-slate-200">订单状态</button>
-                    <button onclick="switchTab('manage')" id="btn-manage" class="tab-btn px-5 py-2 rounded-xl text-sm font-bold bg-white text-slate-600 border border-slate-200">系统设置</button>
-                    <button onclick="switchTab('history')" id="btn-history" class="tab-btn px-5 py-2 rounded-xl text-sm font-bold bg-white text-slate-600 border border-slate-200">订单历史</button>
+                <div class="flex gap-2 overflow-x-auto scroll-hide pb-1">
+                    <button onclick="switchTab('order')" id="btn-order" class="tab-btn shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 tab-active">点单收银</button>
+                    <button onclick="switchTab('status')" id="btn-status" class="tab-btn shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200">订单进度</button>
+                    <button onclick="switchTab('manage')" id="btn-manage" class="tab-btn shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200">系统设置</button>
+                    <button onclick="switchTab('history')" id="btn-history" class="tab-btn shrink-0 px-4 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200">历史订单</button>
                 </div>
             </div>
         </header>
 
-        <main class="flex-grow p-4 max-w-7xl mx-auto w-full">
+        <main class="flex-grow p-3 max-w-7xl mx-auto w-full">
             <!-- 1. 点单收银 -->
-            <div id="tab-order" class="tab-pane fade-in grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- 商品区 -->
-                <div class="lg:col-span-8 space-y-6">
-                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 min-h-[400px]">
-                        <h2 class="text-[10px] font-black text-slate-400 mb-4 tracking-widest uppercase text-center">Select Products 商品列表</h2>
-                        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+            <div id="tab-order" class="tab-pane fade-in flex flex-col lg:grid lg:grid-cols-12 gap-4">
+                <div class="lg:col-span-8 flex flex-col">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 h-full">
+                        <h2 class="text-[9px] font-black text-slate-400 mb-3 tracking-widest uppercase">Select Products 商品列表</h2>
+                        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
                     </div>
                 </div>
 
-                <!-- 购物车区 -->
                 <div class="lg:col-span-4 flex flex-col gap-4">
-                    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 flex flex-col h-[650px]">
-                        <div class="p-5 border-b flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
-                            <h2 class="font-black text-slate-800">当前待下单</h2>
-                            <button onclick="clearCart()" class="text-xs text-red-400 font-bold">清空</button>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-fit lg:max-h-[800px]">
+                        <div class="p-4 border-b flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
+                            <h2 class="font-black text-slate-800 text-sm">当前待下单</h2>
+                            <button onclick="clearCart()" class="text-[10px] text-red-400 font-bold uppercase">Clear 清空</button>
                         </div>
-                        
-                        <!-- 待下单物品列表 -->
-                        <div id="cart-list" class="flex-grow p-4 space-y-3 overflow-y-auto scroll-hide"></div>
+                        <div id="cart-list" class="p-3 space-y-2 max-h-[300px] lg:max-h-none overflow-y-auto scroll-hide"></div>
 
-                        <!-- 备注编辑区域 (整合手动输入与标签) -->
                         <div class="p-4 bg-slate-50 border-t border-slate-100">
                             <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-[10px] font-black text-slate-400 uppercase">Remark 备注编辑</h3>
-                                <button onclick="applyToAll()" class="text-[9px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-bold hover:bg-slate-300">应用至全单</button>
+                                <h3 class="text-[9px] font-black text-slate-400 uppercase">Remark 备注编辑</h3>
+                                <button onclick="applyToAll()" class="text-[9px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-bold">全单应用</button>
                             </div>
-                            <!-- 手动输入框 -->
-                            <input type="text" id="manual-note" 
-                                   oninput="updateNoteFromInput()"
-                                   placeholder="点击商品后输入备注或选择标签..." 
-                                   class="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 mb-3 transition-all">
-                            <!-- 快捷标签区 -->
+                            <input type="text" id="manual-note" oninput="updateNoteFromInput()" placeholder="输入备注..." class="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 mb-3">
                             <div id="tags-container" class="flex flex-wrap gap-2"></div>
                         </div>
 
-                        <div class="p-5 space-y-4 border-t border-slate-100">
+                        <div class="p-4 space-y-3 border-t border-slate-100">
                             <div class="flex justify-between items-center font-black">
-                                <span class="text-slate-400 text-xs">TOTAL 合计</span>
-                                <span class="text-2xl text-blue-600 italic">¥<span id="cart-total">0.00</span></span>
+                                <span class="text-slate-400 text-[10px]">TOTAL 合计</span>
+                                <span class="text-xl text-blue-600 italic">¥<span id="cart-total">0.00</span></span>
                             </div>
-                            <button onclick="submitOrder()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg hover:bg-blue-700 transition-all">
-                                确认下单
-                            </button>
+                            <button onclick="submitOrder()" class="w-full bg-blue-600 text-white py-3.5 rounded-xl font-black text-md shadow-lg active:scale-95">确认下单</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. 订单状态 -->
+            <!-- 2. 订单进度 -->
             <div id="tab-status" class="tab-pane hidden fade-in">
-                <section class="bg-white rounded-3xl p-6 shadow-sm border border-blue-100">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="font-black text-slate-800 text-xl">制作进度管理</h2>
-                        <div class="text-[10px] text-slate-400 font-bold uppercase">实时同步至看板</div>
+                <section class="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center">
+                        <h2 class="font-black text-slate-800 text-md">实时进度管理</h2>
+                        <span class="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">看板同步中</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-slate-50 text-slate-400 text-xs font-bold uppercase">
-                                <tr>
-                                    <th class="p-4">订单号</th>
-                                    <th class="p-4">商品详情</th>
-                                    <th class="p-4 text-right">状态操作</th>
-                                </tr>
-                            </thead>
+                        <table class="w-full">
                             <tbody id="active-orders-body" class="divide-y divide-slate-50"></tbody>
                         </table>
                     </div>
@@ -179,125 +170,120 @@
             </div>
 
             <!-- 3. 系统设置 -->
-            <div id="tab-manage" class="tab-pane hidden fade-in space-y-6">
-                <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                    <h2 class="font-black text-slate-800 mb-4">商品管理</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                        <input type="text" id="m-name" placeholder="品名" class="p-3 bg-slate-50 rounded-xl outline-none border">
-                        <input type="number" id="m-price" placeholder="单价" class="p-3 bg-slate-50 rounded-xl outline-none border">
-                        <button onclick="addProduct()" class="bg-slate-900 text-white font-bold rounded-xl">添加</button>
+            <div id="tab-manage" class="tab-pane hidden fade-in space-y-4">
+                <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                    <h2 class="font-black text-slate-800 mb-3 text-sm">商品管理</h2>
+                    <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                        <input type="text" id="m-name" placeholder="品名" class="flex-grow p-2.5 bg-slate-50 rounded-xl outline-none border text-sm">
+                        <input type="number" id="m-price" placeholder="单价" class="w-full sm:w-24 p-2.5 bg-slate-50 rounded-xl outline-none border text-sm">
+                        <button onclick="addProduct()" class="bg-slate-900 text-white font-bold py-2.5 rounded-xl text-sm px-4">添加</button>
                     </div>
                     <div id="product-manage-list" class="space-y-2"></div>
                 </section>
-                <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                    <h2 class="font-black text-slate-800 mb-4">标签管理</h2>
-                    <div class="flex gap-3 mb-4">
-                        <input type="text" id="tag-input" placeholder="输入新标签" class="flex-grow p-3 bg-slate-50 rounded-xl outline-none border">
-                        <button onclick="addTag()" class="px-6 bg-slate-900 text-white font-bold rounded-xl">添加</button>
+                <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                    <h2 class="font-black text-slate-800 mb-3 text-sm">快捷标签管理</h2>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="tag-input" placeholder="新标签内容" class="flex-grow p-2.5 bg-slate-50 rounded-xl outline-none border text-sm">
+                        <button onclick="addTag()" class="px-4 bg-slate-900 text-white font-bold rounded-xl text-sm">添加</button>
                     </div>
                     <div id="manage-tags-list" class="flex flex-wrap gap-2"></div>
                 </section>
+                <section class="bg-white rounded-2xl p-4 shadow-sm border border-red-100">
+                    <h2 class="font-black text-red-600 mb-3 text-sm">危险区域</h2>
+                    <button onclick="resetOrderNumber()" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold">重置单号</button>
+                </section>
             </div>
 
-            <!-- 4. 订单历史 -->
-            <div id="tab-history" class="tab-pane hidden fade-in space-y-4">
-                <div class="bg-white p-5 rounded-3xl flex justify-between items-center shadow-sm">
-                    <h2 class="font-black text-slate-800">历史订单查询</h2>
-                    <input type="date" id="history-date" onchange="loadHistory()" class="bg-slate-50 p-2 rounded-lg font-bold border-none text-sm">
+            <!-- 4. 历史订单 -->
+            <div id="tab-history" class="tab-pane hidden fade-in space-y-3">
+                <div class="bg-white p-4 rounded-2xl flex flex-wrap justify-between items-center shadow-sm gap-3">
+                    <h2 class="font-black text-slate-800 text-sm">历史订单查询</h2>
+                    <input type="date" id="history-date" onchange="loadHistory()" class="bg-slate-50 p-2 rounded-lg font-bold border text-xs">
                 </div>
-                <div class="bg-white rounded-3xl shadow-sm overflow-hidden">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-black">
-                            <tr>
-                                <th class="p-4">单号</th>
-                                <th class="p-4">内容</th>
-                                <th class="p-4 text-right">总额</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-body" class="divide-y divide-slate-50"></tbody>
-                    </table>
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <tbody id="history-body" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="toast-container" class="fixed top-10 left-1/2 -translate-x-1/2 z-[2000] w-max"></div>
+    <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[2000] w-max max-w-[90vw]"></div>
 
     <script>
-        // --- 数据存储 ---
         const DB = {
-            get: (key, def = []) => JSON.parse(localStorage.getItem('tea_v6_' + key)) || def,
-            set: (key, val) => localStorage.setItem('tea_v6_' + key, JSON.stringify(val)),
+            get: (key, def = []) => JSON.parse(localStorage.getItem('tea_v7_' + key)) || def,
+            set: (key, val) => localStorage.setItem('tea_v7_' + key, JSON.stringify(val)),
             nextNum: () => {
-                let n = parseInt(localStorage.getItem('tea_v6_lastnum') || '0') + 1;
-                if(n > 999) n = 1;
-                localStorage.setItem('tea_v5_lastnum', n);
-                return n;
+                let lastNum = parseInt(localStorage.getItem('tea_v7_lastnum') || '0');
+                let nextNum = lastNum >= 99 ? 1 : lastNum + 1;
+                localStorage.setItem('tea_v7_lastnum', nextNum);
+                return nextNum;
             }
         };
 
         const STATUS_FLOW = ["制作中", "请取餐", "已完成"];
-        const COLOR_MAP = { "制作中": "bg-blue-100 text-blue-600", "请取餐": "bg-green-100 text-green-600", "已完成": "bg-slate-800 text-white" };
+        const COLOR_MAP = { "制作中": "bg-blue-600 text-white", "请取餐": "bg-green-500 text-white", "已完成": "bg-slate-800 text-white" };
+        const BTN_SHORT = { "制作中": "作", "请取餐": "叫", "已完成": "完" };
 
-        let products = DB.get('products', [{id:1, name:'招牌奶茶', price:18}, {id:2, name:'生椰拿铁', price:22}, {id:3, name:'手打柠檬茶', price:16}]);
-        let tags = DB.get('tags', ["去冰", "少糖", "加珍珠", "多糖", "常温", "不要茶冻"]);
+        let products = DB.get('products', [{id:1, name:'招牌奶茶', price:18}, {id:2, name:'生椰拿铁', price:22}, {id:3, name:'柠檬红茶', price:16}]);
+        let tags = DB.get('tags', ["去冰", "少糖", "加珍珠", "热饮", "多糖", "走茶冻"]);
         let orders = DB.get('orders');
         let cart = []; 
         let selectedCartIndex = -1;
 
-        // --- 核心切换 ---
         function switchTab(tab) {
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
             document.getElementById('tab-' + tab).classList.remove('hidden');
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
             document.getElementById('btn-' + tab).classList.add('tab-active');
-
             if(tab === 'order') { renderProducts(); renderTags(); renderCart(); }
             if(tab === 'status') { renderActiveOrders(); }
             if(tab === 'manage') { renderManageUI(); }
             if(tab === 'history') { loadHistory(); }
         }
 
-        // --- 看板逻辑 ---
+        // 看板逻辑
         function openDisplayPage() {
             document.getElementById('page-display').style.display = 'flex';
             renderScreenContent();
             window.displayInterval = setInterval(renderScreenContent, 3000);
-            window.timeInterval = setInterval(() => {
-                document.getElementById('display-time').innerText = new Date().toLocaleTimeString('zh-CN', {hour12:false});
-            }, 1000);
         }
         function closeDisplayPage() {
             document.getElementById('page-display').style.display = 'none';
             clearInterval(window.displayInterval);
-            clearInterval(window.timeInterval);
         }
         function renderScreenContent() {
             const prep = document.getElementById('screen-preparing');
             const ready = document.getElementById('screen-ready');
-            prep.innerHTML = orders.filter(o => o.status === "制作中").slice(0, 12).map(o => `<div class="number-card h-16 text-2xl text-slate-400 animate-pulse">${o.num}</div>`).join('');
-            ready.innerHTML = orders.filter(o => o.status === "请取餐").slice(0, 15).map(o => `<div class="number-card h-28 text-5xl text-green-600 border-green-200 ready-animation">${o.num}</div>`).join('');
+            prep.innerHTML = orders.filter(o => o.status === "制作中").slice(0, 8).map(o => `<div class="number-card h-12 text-lg text-slate-400 animate-pulse">${o.num}</div>`).join('');
+            ready.innerHTML = orders.filter(o => o.status === "请取餐").slice(0, 12).map(o => `<div class="number-card h-20 text-3xl text-green-600 border-green-100 ready-animation">${o.num}</div>`).join('');
         }
 
-        // --- 点单逻辑 ---
         function renderProducts() {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = products.map(p => `
-                <div onclick="addToCart(${p.id})" class="bg-white p-4 rounded-2xl border-2 border-slate-100 hover:border-blue-400 active:scale-95 transition-all cursor-pointer text-center">
-                    <div class="font-black text-slate-700 text-sm mb-1">${p.name}</div>
-                    <div class="text-blue-500 font-black text-xs italic">¥${p.price.toFixed(2)}</div>
+                <div onclick="addToCart(${p.id})" class="bg-white p-3 rounded-xl border-2 border-slate-100 active:border-blue-500 transition-all cursor-pointer text-center">
+                    <div class="font-bold text-slate-700 text-xs truncate mb-1">${p.name}</div>
+                    <div class="text-blue-500 font-black text-[10px] italic">¥${p.price.toFixed(2)}</div>
                 </div>
             `).join('');
         }
 
+        // 点单逻辑：合并重复商品
         function addToCart(pid) {
-            const p = products.find(x => x.id === pid);
-            const existing = cart.find(i => i.id === pid && i.note === ""); 
-            if (existing) {
-                existing.count++;
-                selectedCartIndex = cart.indexOf(existing);
+            const pTemplate = products.find(x => x.id === pid);
+            // 查找是否已存在相同 ID 且备注为空的项（方便后续统一修改备注）
+            const existingIndex = cart.findIndex(item => item.id === pid && item.note === "");
+            
+            if (existingIndex > -1) {
+                cart[existingIndex].count += 1;
+                selectedCartIndex = existingIndex;
             } else {
-                cart.push({ ...p, note: "", count: 1 });
+                cart.push({ ...pTemplate, note: "", count: 1, cartId: Date.now() });
                 selectedCartIndex = cart.length - 1;
             }
             renderCart();
@@ -311,105 +297,70 @@
                 total += item.price * item.count;
                 const isActive = selectedCartIndex === idx;
                 return `
-                    <div onclick="selectCartItem(${idx})" class="p-4 rounded-2xl border transition-all cursor-pointer flex flex-col gap-1 ${isActive ? 'cart-item-active' : 'bg-slate-50 border-slate-100'}">
+                    <div onclick="selectCartItem(${idx})" class="p-3 rounded-xl border transition-all cursor-pointer flex flex-col gap-1 ${isActive ? 'cart-item-active' : 'bg-slate-50 border-slate-100'}">
                         <div class="flex justify-between items-center">
-                            <span class="text-sm font-black text-slate-800">${item.name}</span>
-                            <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border">
+                            <span class="text-xs font-black text-slate-800">${item.name}</span>
+                            <div class="flex items-center gap-2 bg-white px-2 py-0.5 rounded-lg border">
                                 <button onclick="event.stopPropagation(); changeCount(${idx}, -1)" class="w-5 h-5 flex items-center justify-center font-bold text-slate-400">-</button>
-                                <span class="text-xs font-black min-w-[1rem] text-center">${item.count}</span>
+                                <span class="text-[10px] font-black w-4 text-center">${item.count}</span>
                                 <button onclick="event.stopPropagation(); changeCount(${idx}, 1)" class="w-5 h-5 flex items-center justify-center font-bold text-blue-500">+</button>
                             </div>
                         </div>
-                        <div class="text-[10px] font-bold text-blue-500 italic truncate">
-                            ${item.note || '暂无备注'}
-                        </div>
+                        <div class="text-[9px] font-bold text-blue-500 italic truncate">${item.note || '无备注'}</div>
                     </div>
                 `;
             }).join('');
             document.getElementById('cart-total').innerText = total.toFixed(2);
-            if(!cart.length) {
-                list.innerHTML = `<div class="h-full flex items-center justify-center text-slate-300 text-xs italic">购物车为空</div>`;
-                selectedCartIndex = -1;
-                syncNoteInput();
-            }
+            if(!cart.length) list.innerHTML = `<div class="py-10 text-center text-slate-300 text-[10px] italic">购物车为空</div>`;
         }
 
-        function selectCartItem(idx) {
-            selectedCartIndex = idx;
-            renderCart();
-            syncNoteInput();
-        }
-
+        function selectCartItem(idx) { selectedCartIndex = idx; renderCart(); syncNoteInput(); }
         function changeCount(idx, delta) {
             cart[idx].count += delta;
-            if (cart[idx].count <= 0) {
-                cart.splice(idx, 1);
-                selectedCartIndex = -1;
-            }
-            renderCart();
-            syncNoteInput();
+            if (cart[idx].count <= 0) { cart.splice(idx, 1); selectedCartIndex = -1; }
+            renderCart(); syncNoteInput();
         }
 
-        // --- 备注增强逻辑 ---
         function renderTags() {
             const container = document.getElementById('tags-container');
-            container.innerHTML = tags.map(t => `
-                <button onclick="appendTag('${t}')" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-blue-500 hover:text-white transition-all">
-                    ${t}
-                </button>
-            `).join('');
+            container.innerHTML = tags.map(t => `<button onclick="appendTag('${t}')" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 active:bg-blue-600 active:text-white transition-colors">${t}</button>`).join('');
         }
-
         function syncNoteInput() {
             const input = document.getElementById('manual-note');
-            if (selectedCartIndex > -1) {
-                input.value = cart[selectedCartIndex].note;
-                input.disabled = false;
-            } else {
-                input.value = "";
-                input.disabled = cart.length === 0;
-            }
+            input.value = (selectedCartIndex > -1) ? cart[selectedCartIndex].note : "";
+            input.disabled = (cart.length === 0);
         }
-
         function updateNoteFromInput() {
-            const val = document.getElementById('manual-note').value;
-            if (selectedCartIndex > -1) {
-                cart[selectedCartIndex].note = val;
-                renderCart();
-            }
+            if (selectedCartIndex > -1) { cart[selectedCartIndex].note = document.getElementById('manual-note').value; renderCart(); }
         }
-
         function appendTag(tag) {
-            if (selectedCartIndex === -1 && cart.length > 0) {
-                toast("请先点击选择一个物品进行备注", "error");
-                return;
-            }
+            if (selectedCartIndex === -1 && cart.length > 0) return toast("请先选中一个商品", "error");
             const input = document.getElementById('manual-note');
-            const currentVal = input.value;
-            input.value = currentVal ? currentVal + " " + tag : tag;
+            input.value = input.value ? input.value + " " + tag : tag;
             updateNoteFromInput();
         }
-
         function applyToAll() {
             const val = document.getElementById('manual-note').value;
             if (!cart.length) return;
             cart.forEach(item => item.note = val);
             renderCart();
-            toast("备注已应用至全单");
+            toast("已应用至全单");
         }
 
         function clearCart() { cart = []; selectedCartIndex = -1; renderCart(); syncNoteInput(); }
-
+        
         function submitOrder() {
-            if(!cart.length) return toast("购物车是空的", "error");
+            if(!cart.length) return toast("请先点单", "error");
+            const paddedNum = String(DB.nextNum()).padStart(2, '0');
             const order = {
                 id: Date.now(),
-                num: String(DB.nextNum()).padStart(3, '0'),
+                num: paddedNum,
                 items: JSON.parse(JSON.stringify(cart)),
                 total: parseFloat(document.getElementById('cart-total').innerText),
                 status: "制作中",
                 time: new Date().toLocaleTimeString('zh-CN', {hour12:false}),
-                date: new Date().toISOString().split('T')[0]
+                date: new Date().toISOString().split('T')[0],
+                finishTime: "-"
             };
             orders.unshift(order);
             DB.set('orders', orders);
@@ -417,51 +368,99 @@
             toast(`下单成功: #${order.num}`);
         }
 
-        // --- 订单状态/后台逻辑 ---
+        // 实时进度管理
         function renderActiveOrders() {
             const tbody = document.getElementById('active-orders-body');
             const active = orders.filter(o => o.status !== "已完成");
             tbody.innerHTML = active.map(o => `
                 <tr class="fade-in">
-                    <td class="p-4 font-black text-blue-600 text-xl italic">#${o.num}</td>
-                    <td class="p-4">
-                        <div class="text-[11px] font-bold text-slate-500">
-                            ${o.items.map(i => `${i.name}x${i.count}${i.note?'('+i.note+')':''}`).join('、')}
+                    <td class="p-3 w-12 sm:w-16">
+                        <span class="font-black text-blue-600 text-lg italic">#${o.num}</span>
+                    </td>
+                    <td class="p-3">
+                        <div class="flex flex-col gap-0.5">
+                            <div class="text-[12px] font-black text-slate-800 leading-tight">
+                                ${o.items.map(i => `${i.name}×${i.count}`).join('、')}
+                            </div>
+                            <div class="text-[10px] font-bold text-blue-500 truncate">
+                                备注: ${o.items.map(i => i.note).filter(n => n).join(' | ') || '无'}
+                            </div>
+                            <div class="text-[9px] text-slate-400">时间: ${o.time}</div>
                         </div>
                     </td>
-                    <td class="p-4 text-right">
-                        <div class="flex gap-2 justify-end">
+                    <td class="p-3 text-right">
+                        <div class="flex gap-1.5 justify-end items-center">
                             ${STATUS_FLOW.map(s => `
-                                <button onclick="updateStatus(${o.id}, '${s}')" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${o.status === s ? COLOR_MAP[s] : 'bg-slate-50 text-slate-300'}">
-                                    ${s === "制作中" ? "制作" : (s === "请取餐" ? "叫号" : "完成")}
+                                <button onclick="updateStatus(${o.id}, '${s}')" 
+                                        data-short="${BTN_SHORT[s]}"
+                                        class="status-btn px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${o.status === s ? COLOR_MAP[s] : 'bg-slate-100 text-slate-400'}">
+                                    <span>${s === "制作中" ? "制作" : (s === "请取餐" ? "叫号" : "完成")}</span>
                                 </button>
                             `).join('')}
                         </div>
                     </td>
                 </tr>
             `).join('');
-            if(!active.length) tbody.innerHTML = `<tr><td colspan="3" class="p-10 text-center text-slate-300 font-bold italic">暂无活跃订单</td></tr>`;
+            if(!active.length) tbody.innerHTML = `<tr><td class="p-10 text-center text-slate-300 text-xs italic">暂无进行中的订单</td></tr>`;
         }
 
         function updateStatus(oid, status) {
             const o = orders.find(x => x.id === oid);
             if(o) {
                 o.status = status;
+                // 完成时记录时间
+                if(status === "已完成") {
+                    o.finishTime = new Date().toLocaleTimeString('zh-CN', {hour12:false});
+                }
                 DB.set('orders', orders);
                 renderActiveOrders();
-                toast(`#${o.num} 状态: ${status}`);
+                toast(`#${o.num} -> ${status}`);
             }
+        }
+
+        // 历史订单逻辑：与进度管理排列一致
+        function loadHistory() {
+            const date = document.getElementById('history-date').value;
+            const filtered = orders.filter(o => o.date === date && o.status === "已完成");
+            const tbody = document.getElementById('history-body');
+            
+            tbody.innerHTML = filtered.map(o => `
+                <tr class="fade-in hover:bg-slate-50 transition-colors">
+                    <td class="p-3 w-12 sm:w-16">
+                        <span class="font-black text-slate-400 text-lg italic">#${o.num}</span>
+                    </td>
+                    <td class="p-3">
+                        <div class="flex flex-col gap-0.5">
+                            <div class="text-[12px] font-black text-slate-600 leading-tight">
+                                ${o.items.map(i => `${i.name}×${i.count}`).join('、')}
+                            </div>
+                            <div class="text-[10px] font-bold text-slate-400 truncate">
+                                备注: ${o.items.map(i => i.note).filter(n => n).join(' | ') || '无'}
+                            </div>
+                            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                <span class="text-[9px] text-slate-400">下单: ${o.time}</span>
+                                <span class="text-[9px] text-green-500 font-bold">完成: ${o.finishTime}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-3 text-right">
+                        <div class="text-xs font-black text-slate-700 italic">¥${o.total.toFixed(2)}</div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            if(!filtered.length) tbody.innerHTML = `<tr><td class="p-10 text-center text-slate-300 text-xs italic">该日期无已完成订单记录</td></tr>`;
         }
 
         function renderManageUI() {
             document.getElementById('product-manage-list').innerHTML = products.map(p => `
-                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
-                    <span class="font-bold text-slate-700">${p.name} (¥${p.price})</span>
-                    <button onclick="delProduct(${p.id})" class="text-red-400 font-bold text-xs">删除</button>
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border">
+                    <span class="font-bold text-slate-700 text-xs">${p.name} (¥${p.price})</span>
+                    <button onclick="delProduct(${p.id})" class="text-red-400 font-bold text-[10px] uppercase">删除</button>
                 </div>
             `).join('');
             document.getElementById('manage-tags-list').innerHTML = tags.map((t, idx) => `
-                <div class="bg-slate-50 px-3 py-1 rounded-lg text-xs font-bold text-slate-600 flex items-center gap-2 border">
+                <div class="bg-slate-50 px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 flex items-center gap-1.5 border">
                     ${t} <button onclick="tags.splice(${idx},1); DB.set('tags', tags); renderManageUI()" class="text-red-400">×</button>
                 </div>
             `).join('');
@@ -474,7 +473,15 @@
                 products.push({ id: Date.now(), name: n, price: p });
                 DB.set('products', products);
                 renderManageUI();
+                document.getElementById('m-name').value = '';
+                document.getElementById('m-price').value = '';
             }
+        }
+
+        function delProduct(id) {
+            products = products.filter(p => p.id !== id);
+            DB.set('products', products);
+            renderManageUI();
         }
 
         function addTag() {
@@ -485,25 +492,18 @@
                 renderManageUI();
             }
         }
-
-        function loadHistory() {
-            const date = document.getElementById('history-date').value;
-            const filtered = orders.filter(o => o.date === date);
-            document.getElementById('history-body').innerHTML = filtered.map(o => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-4 font-black text-slate-400">#${o.num}</td>
-                    <td class="p-4 text-[10px] font-bold text-slate-600">${o.items.map(i => i.name).join(', ')}</td>
-                    <td class="p-4 text-right font-black italic">¥${o.total.toFixed(2)}</td>
-                </tr>
-            `).join('');
+        
+        function resetOrderNumber() {
+            localStorage.setItem('tea_v7_lastnum', '0');
+            toast("单号已重置为 01");
         }
 
         function toast(msg, type = "success") {
             const t = document.createElement('div');
-            t.className = `px-6 py-3 mb-2 rounded-2xl shadow-xl font-black text-sm text-white ${type==='success'?'bg-slate-900':'bg-red-500'} fade-in`;
+            t.className = `px-5 py-2.5 mb-2 rounded-xl shadow-lg font-bold text-xs text-white ${type==='success'?'bg-slate-900':'bg-red-500'} fade-in`;
             t.innerText = msg;
             document.getElementById('toast-container').appendChild(t);
-            setTimeout(() => t.remove(), 2500);
+            setTimeout(() => t.remove(), 2000);
         }
 
         window.onload = () => {
