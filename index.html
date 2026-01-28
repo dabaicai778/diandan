@@ -229,8 +229,8 @@
         const COLOR_MAP = { "制作中": "bg-blue-600 text-white", "请取餐": "bg-green-500 text-white", "已完成": "bg-slate-800 text-white" };
         const BTN_SHORT = { "制作中": "作", "请取餐": "叫", "已完成": "完" };
 
-        let products = DB.get('products', [{id:1, name:'招牌奶茶', price:18}, {id:2, name:'生椰拿铁', price:22}, {id:3, name:'柠檬红茶', price:16}]);
-        let tags = DB.get('tags', ["去冰", "少糖", "加珍珠", "热饮", "多糖", "走茶冻"]);
+        let products = DB.get('products', [{id:1, name:'汉堡', price:3}, {id:2, name:'鸟蛋', price:5}, {id:3, name:'热狗', price:3}]);
+        let tags = DB.get('tags', ["微辣", "不辣", "打包", "重辣"]);
         let orders = DB.get('orders');
         let cart = []; 
         let selectedCartIndex = -1;
@@ -513,3 +513,4 @@
     </script>
 </body>
 </html>
+
